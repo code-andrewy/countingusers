@@ -1,175 +1,229 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <title>Live Counter Embed</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Counter</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg1: #06080f;
-            --bg2: #0b1020;
-            --card: rgba(15, 20, 40, 0.9);
-            --border: rgba(255, 255, 255, 0.1);
+            --bg: #06080f;
+            --card: #161b2c;
             --accent: #00ffe0;
-            --text: #fff;
-            --muted: #b8b8d0;
-            --blur: 12px;
+            --error: #ff4141;
+            --text: #ffffff;
+            --muted: #8e99af;
         }
 
-        /* Helps when embeding our site in an iframe */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        html, body {
-            width: 100%;
-            height: 100%;
-            background: transparent; 
-            font-family: "Outfit", sans-serif;
-            overflow: hidden;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            background: transparent;
+            font-family: 'Outfit', sans-serif;
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
         }
 
-        
         .panel {
-            position: relative;
-            width: 100%;
-            max-width: 320px; 
             background: var(--card);
-            backdrop-filter: blur(var(--blur));
-            -webkit-backdrop-filter: blur(var(--blur));
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 25px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            border-radius: 32px;
+            padding: 35px;
+            width: 320px;
             text-align: center;
-            border-bottom: 3px solid var(--accent);
-            transition: transform 0.3s ease;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-bottom: 5px solid var(--accent);
         }
 
         .badge {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 4px 12px;
-            border-radius: 100px;
-            font-size: .65rem;
-            font-weight: 800;
+            gap: 8px;
             background: rgba(0, 255, 224, 0.1);
+            padding: 6px 16px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 800;
             color: var(--accent);
-            margin-bottom: 10px;
             text-transform: uppercase;
             letter-spacing: 1.5px;
-            border: 1px solid rgba(0, 255, 224, 0.2);
+            margin-bottom: 20px;
         }
 
         .dot {
-            width: 6px;
-            height: 6px;
+            width: 8px;
+            height: 8px;
             background: var(--accent);
             border-radius: 50%;
-            box-shadow: 0 0 10px var(--accent);
+        }
+
+        .pulse {
             animation: pulse 2s infinite;
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.3; transform: scale(0.8); }
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.3;
+                transform: scale(0.8);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
 
         #count {
-            font-size: 4.5rem;
+            font-size: 5rem;
             font-weight: 900;
-            margin: 5px 0;
             line-height: 1;
             color: var(--text);
-            text-shadow: 0 0 20px rgba(0, 255, 224, 0.3);
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            margin: 5px 0;
+            text-shadow: 0 0 30px rgba(0, 255, 224, 0.2);
         }
 
-        .subtitle {
+        .label {
             color: var(--muted);
-            font-size: 0.75rem;
+            font-size: 13px;
             font-weight: 700;
-            letter-spacing: 1px;
             text-transform: uppercase;
+            letter-spacing: 2px;
         }
 
-       
-        #debug {
-            position: fixed;
-            bottom: 5px;
-            right: 10px;
-            font-size: 8px;
-            color: rgba(255, 255, 255, 0.1);
+        /* Error state matching your image */
+        .panel.is-error {
+            border-bottom-color: var(--error);
         }
 
-        /* Animation when user joins/leaves */
-        .bump { transform: scale(1.08); color: var(--accent) !important; }
+        .is-error .badge {
+            background: rgba(255, 65, 65, 0.1);
+            color: var(--error);
+        }
+
+        .is-error .dot {
+            background: var(--error);
+        }
+
+        .is-error #count {
+            color: var(--error);
+        }
+
+        .bump {
+            transform: scale(1.1);
+        }
     </style>
 </head>
+
 <body>
 
-    <div class="panel">
+    <div class="panel" id="widget">
         <div class="badge">
-            <span class="dot"></span>
-            Jumpman64
+            <span id="status">Connecting</span>
         </div>
-        <div id="count">Error loading</div>
-        <div class="subtitle">Online users</div>
-    </div>
+        <div id="count">Error
+        </div>
 
-    <div id="debug">Loading...</div>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        const CONF = {
-            URL: 'https://muvudpnjdiblrsxidvdh.supabase.co',
-            KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11dnVkcG5qZGlibHJzeGlkdmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzMTQ0MjYsImV4cCI6MjA4Nzg5MDQyNn0.SF_7DDf9k2CqHhEgLzf3oml-DF4MWhASjXrHXJb9TTM'
-        };
-
-        const countEl = document.getElementById('count');
-        const debugEl = document.getElementById('debug');
-        
-        const tabId = 't_' + Math.random().toString(36).substr(2, 6);
-
-        async function init() {
-            const supabase = window.supabase.createClient(CONF.URL, CONF.KEY);
-            const channel = supabase.channel('presence-global', {
-                config: { presence: { key: tabId } }
-            });
-
-            const render = () => {
-                const state = channel.presenceState();
-                const total = Object.keys(state).length;
-                
-                
-                countEl.classList.add('bump');
-                setTimeout(() => countEl.classList.remove('bump'), 250);
-                
-                countEl.innerText = total > 0 ? total : "1";
-                debugEl.innerText = " | " + tabId;
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script>
+            const _S = {
+                u: "cmYxaHZkZWRzeHYxa2d5Z2x7dnVvZWxnbXFzZ3h5eHAyMj12c3d3aw==",
+                k: "UFdXPGVNW0t1W21WRGtaUDdJRzBvcHI2aX1PakhrS3RGNW48aUdHOmJJVjEzcVF8VEdQOGp9UTdEbVA5TEZmN1lwTHZcbVAzVFdQfUx9UTZIbVJsVFtcc01GT2w3NWV4SXBMOUxWXXY8cGZsemxMclVwZ25vSmh9TUtlbG9KXXQ4SmZuWXFnNDRwTDlMbF1vTXFMdkxWXX1JcFxrRVtnfU1sUmxQNmZzTXxoMTxNRllbc25MOUxGZjhVcUx2TGxRNEx9WExNbFJsZkpla018aA=="
             };
 
-            channel
-                .on('presence', { event: 'sync' }, render)
-                .on('presence', { event: 'join' }, render)
-                .on('presence', { event: 'leave' }, render)
-                .subscribe(async (status) => {
-                    if (status === 'SUBSCRIBED') {
-                        await channel.track({ online_at: new Date().toISOString() });
-                    }
-                });
+            const _D = (s) => {
+                try {
+                    const b = atob(s).split('').reverse().join('');
+                    return b.split('').map(c => String.fromCharCode(c.charCodeAt(0) - 3)).join('');
+                } catch (e) {
+                    return null;
+                }
+            };
 
-            
-            window.addEventListener('beforeunload', () => channel.untrack());
-            
-            
-            document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'visible') channel.track({ active: true });
-            });
-        }
+            const widget = document.getElementById('widget');
+            const countEl = document.getElementById('count');
+            const statusEl = document.getElementById('status');
 
-        window.onload = init;
-    </script>
+            async function init() {
+                const url = _D(_S.u);
+                const key = _D(_S.k);
+
+                if (!url || !key) return fail("Auth Fail");
+
+                try {
+                    const supabase = window.supabase.createClient(url, key);
+                    const channel = supabase.channel('presence-global', {
+                        config: {
+                            presence: {
+                                key: 'user_' + Math.random().toString(36).slice(2, 7)
+                            }
+                        }
+                    });
+
+                    const sync = () => {
+                        const state = channel.presenceState();
+                        const total = Object.keys(state).length;
+
+                        countEl.textContent = total > 0 ? total : 1;
+                        statusEl.textContent = "Jumpman64"
+
+                        countEl.classList.add('bump');
+                        setTimeout(() => countEl.classList.remove('bump'), 200);
+                    };
+
+                    channel
+                        .on('presence', {
+                            event: 'sync'
+                        }, sync)
+                        .on('presence', {
+                            event: 'join'
+                        }, sync)
+                        .on('presence', {
+                            event: 'leave'
+                        }, sync)
+                        .subscribe(async (status) => {
+                            if (status === 'SUBSCRIBED') {
+                                await channel.track({
+                                    online_at: new Date().toISOString()
+                                });
+                            } else if (status === 'CHANNEL_ERROR') {
+                                fail("Realtime Disabled");
+                            }
+                        });
+
+
+                    setTimeout(() => {
+                        if (countEl.textContent === "...") fail("Timeout");
+                    }, 5000);
+
+                } catch (err) {
+                    fail("Connection Error");
+                    console.error(err);
+                }
+            }
+
+            function fail(msg) {
+                widget.classList.add('is-error');
+                statusEl.textContent = "Error";
+                countEl.textContent = "!";
+                console.warn("Counter Debug:", msg);
+            }
+
+            window.onload = init;
+        </script>
 </body>
+
 </html>
